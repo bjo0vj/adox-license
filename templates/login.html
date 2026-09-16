@@ -1,0 +1,19 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Login</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui;background:#0f172a;color:#e2e8f0;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.box{background:#1e293b;padding:40px;border-radius:12px;border:1px solid #334155;width:340px}
+.box h1{text-align:center;margin-bottom:24px;color:#38bdf8;font-size:1.3rem}
+.box input{width:100%;padding:10px 14px;margin-bottom:14px;background:#0f172a;border:1px solid #475569;color:#e2e8f0;border-radius:6px}
+.box button{width:100%;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer}
+.box button:hover{background:#1d4ed8}
+.fl{padding:8px 12px;border-radius:6px;margin-bottom:14px;background:#7f1d1d;color:#fca5a5;font-size:.85rem}
+</style></head>
+<body><div class="box"><h1>Admin Login</h1>
+{% for m in get_flashed_messages() %}<div class="fl">{{m}}</div>{% endfor %}
+<form method="POST">
+<input name="username" placeholder="Username" required autofocus>
+<input type="password" name="password" placeholder="Password" required>
+<button>Login</button>
+</form></div></body></html>

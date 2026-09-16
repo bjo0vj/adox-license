@@ -1,0 +1,109 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>License Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.ct{max-width:1100px;margin:0 auto;padding:20px}
+h1{font-size:1.5rem;margin-bottom:20px;color:#38bdf8}
+.fl{padding:10px 16px;border-radius:6px;margin-bottom:16px;font-size:.9rem}
+.fl.success{background:#065f46;color:#6ee7b7}
+.fl.error{background:#7f1d1d;color:#fca5a5}
+.card{background:#1e293b;border-radius:10px;padding:20px;margin-bottom:20px;border:1px solid #334155}
+.card h2{font-size:1.1rem;margin-bottom:14px;color:#94a3b8}
+.gf{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.gf label{font-size:.8rem;color:#94a3b8;display:block;margin-bottom:4px}
+.gf input,.gf select{background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:8px 12px;border-radius:6px}
+.btn{padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600}
+.bp{background:#2563eb;color:#fff}.bp:hover{background:#1d4ed8}
+.bd{background:#dc2626;color:#fff}.bd:hover{background:#b91c1c}
+.bs{padding:5px 12px;font-size:.8rem}
+.bg{background:#059669;color:#fff}.bw{background:#d97706;color:#fff}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;padding:10px 8px;color:#64748b;border-bottom:2px solid #334155;white-space:nowrap}
+td{padding:8px;border-bottom:1px solid #1e293b;vertical-align:middle}
+tr:hover td{background:#1e293b80}
+.kt{font-family:monospace;color:#38bdf8;font-weight:600}
+.b{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:600}
+.b-g{background:#065f46;color:#6ee7b7}.b-r{background:#7f1d1d;color:#fca5a5}
+.b-y{background:#78350f;color:#fbbf24}.b-x{background:#374151;color:#9ca3af}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.stats{display:flex;gap:16px;flex-wrap:wrap}
+.st{background:#1e293b;padding:12px 20px;border-radius:8px;border:1px solid #334155;text-align:center}
+.st .n{font-size:1.5rem;font-weight:700;color:#38bdf8}
+.st .l{font-size:.75rem;color:#64748b}
+.ni{background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:4px 8px;border-radius:4px;width:120px}
+.acts{display:flex;gap:4px}
+@media(max-width:768px){.gf{flex-direction:column}table{font-size:.75rem}.ct{padding:10px}}
+</style></head>
+<body><div class="ct">
+<div class="top"><h1>License Admin</h1>
+<a href="{{url_for('logout')}}" class="btn bd bs">Logout</a></div>
+{% for cat,msg in get_flashed_messages(with_categories=true) %}
+<div class="fl {{cat}}">{{msg}}</div>{% endfor %}
+<div class="stats">
+<div class="st"><div class="n">{{total}}</div><div class="l">Total</div></div>
+<div class="st"><div class="n">{{active}}</div><div class="l">Active</div></div>
+<div class="st"><div class="n">{{bound}}</div><div class="l">Bound</div></div>
+<div class="st"><div class="n">{{expired}}</div><div class="l">Expired</div></div>
+</div>
+<div class="card" style="margin-top:20px"><h2>Generate Keys</h2>
+<form method="POST" action="{{url_for('admin_generate')}}" class="gf">
+<div><label>Qty</label><input type="number" name="qty" value="1" min="1" max="100" style="width:70px"></div>
+<div><label>Type</label><select name="duration_type">
+<option value="days">Days</option><option value="months">Months</option>
+<option value="years">Years</option><option value="lifetime">Lifetime</option></select></div>
+<div><label>Value</label><input type="number" name="duration_value" value="30" min="1" max="9999" style="width:80px"></div>
+<div><label>Note</label><input name="note" placeholder="Optional" style="width:160px"></div>
+<div><label>&nbsp;</label><button class="btn bp">Generate</button></div>
+</form></div>
+
+<div class="card"><h2>All Keys ({{total}})</h2><div style="overflow-x:auto"><table>
+<tr><th>#</th><th>Key</th><th>Status</th><th>Expires</th><th>Machine</th><th>Note</th><th>Created</th><th>Actions</th></tr>
+{% for k in keys %}<tr>
+<td>{{k.id}}</td>
+<td class="kt">{{k.key}}</td>
+<td>
+{% if not k.is_active %}<span class="b b-x">Off</span>
+{% elif k.is_expired %}<span class="b b-r">Expired</span>
+{% elif k.bound_machine %}<span class="b b-g">Bound</span>
+{% else %}<span class="b b-y">Unused</span>{% endif %}
+</td>
+<td>{{k.expires_at or 'Lifetime'}}</td>
+<td style="font-size:.75rem;color:#64748b">{{k.bound_machine or '-'}}</td>
+<td><form method="POST" action="{{url_for('admin_update_note')}}" style="display:inline">
+<input type="hidden" name="key" value="{{k.key}}">
+<input name="note" value="{{k.note or ''}}" class="ni"></form></td>
+<td style="font-size:.75rem;color:#64748b">{{k.created_at}}</td>
+<td><div class="acts">
+{% if k.bound_machine %}
+<form method="POST" action="{{url_for('admin_unbind')}}" style="display:inline">
+<input type="hidden" name="key" value="{{k.key}}"><button class="btn bw bs">Unbind</button></form>
+{% endif %}
+{% if k.is_active %}
+<form method="POST" action="{{url_for('admin_toggle')}}" style="display:inline">
+<input type="hidden" name="key" value="{{k.key}}"><input type="hidden" name="action" value="disable">
+<button class="btn bs" style="background:#475569;color:#e2e8f0">Off</button></form>
+{% else %}
+<form method="POST" action="{{url_for('admin_toggle')}}" style="display:inline">
+<input type="hidden" name="key" value="{{k.key}}"><input type="hidden" name="action" value="enable">
+<button class="btn bg bs">On</button></form>
+{% endif %}
+<form method="POST" action="{{url_for('admin_delete')}}" style="display:inline" onsubmit="return confirm('Delete?')">
+<input type="hidden" name="key" value="{{k.key}}"><button class="btn bd bs">Del</button></form>
+</div></td></tr>{% endfor %}
+</table></div></div>
+
+<div class="card"><h2>Logs</h2><div style="overflow-x:auto"><table>
+<tr><th>Time</th><th>Action</th><th>Key</th><th>Machine</th><th>IP</th><th>Detail</th></tr>
+{% for l in logs %}<tr>
+<td style="font-size:.75rem;white-space:nowrap">{{l.ts}}</td>
+<td>{{l.action}}</td>
+<td class="kt" style="font-size:.75rem">{{l.key or '-'}}</td>
+<td style="font-size:.75rem">{{l.machine_id or '-'}}</td>
+<td style="font-size:.75rem">{{l.ip or '-'}}</td>
+<td style="font-size:.75rem;color:#64748b">{{l.detail or ''}}</td>
+</tr>{% endfor %}
+</table></div></div>
+</div></body></html>
+
