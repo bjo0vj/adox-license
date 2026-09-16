@@ -1,4 +1,4 @@
-# AdoExport License Server — Hướng dẫn Setup
+# AdoExport License Server — Hướng dẫn Setup (Railway)
 
 ## Đăng nhập Admin
 
@@ -29,92 +29,89 @@ git push -u origin main
 
 ---
 
-## Bước 2: Deploy lên Render
+## Bước 2: Deploy lên Railway
 
-1. Vào https://render.com → **Sign up** (đăng ký bằng GitHub cho nhanh)
-2. Sau khi đăng nhập, bấm **New +** (góc trên phải) → **Web Service**
-3. Chọn **Build and deploy from a Git repository** → **Next**
-4. Tìm repo `adox-license` vừa push → bấm **Connect**
-5. Điền thông tin:
+1. Vào https://railway.app → **Login** bằng GitHub
+2. Bấm **New Project** → **Deploy from GitHub repo**
+3. Chọn repo `adox-license` → bấm **Deploy Now**
+4. Railway tự detect Python, cài `requirements.txt`, dùng `railway.toml` để start
 
-| Mục | Giá trị |
-|-----|---------|
-| **Name** | `adox` (càng ngắn càng tốt, URL sẽ là `https://adox.onrender.com`) |
-| **Region** | Singapore (gần VN nhất) hoặc Oregon |
-| **Branch** | `main` |
-| **Runtime** | `Python 3` |
-| **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `gunicorn app:app --bind 0.0.0.0:$PORT` |
-| **Instance Type** | **Free** |
+### Thêm Environment Variables
 
-6. Kéo xuống mục **Environment Variables**, bấm **Add Environment Variable** 3 lần:
+Vào project → chọn service → tab **Variables** → bấm **+ New Variable**, thêm 3 biến:
 
 | Key | Value |
 |-----|-------|
-| `SECRET_KEY` | bấm nút **Generate** |
+| `SECRET_KEY` | gõ 1 chuỗi ngẫu nhiên dài (vd: `abc123xyz456...`) |
 | `ADMIN_USER` | `bjo0vj` |
 | `ADMIN_PASS` | `Phat@0833` |
 
-7. Bấm **Create Web Service**
-8. Đợi build (1-3 phút), khi thấy **==> Your service is live 🎉** là xong
+> Railway tự redeploy sau khi thêm biến.
+
+### Tạo domain public
+
+1. Vào service → tab **Settings** → mục **Networking** (hoặc **Public Networking**)
+2. Bấm **Generate Domain**
+3. Được URL dạng: `https://adox-license-production-xxxx.up.railway.app`
+
+> ⚠️ URL Railway thường dài. Nếu quá 32 chars → vào **Settings** → **Custom Domain** đặt domain ngắn, hoặc dùng **Change Domain** để chỉnh prefix ngắn lại.
 
 ### Kiểm tra
 
 Mở trình duyệt:
-- `https://adox.onrender.com/` → thấy `{"status":"ok"}` ✓
-- `https://adox.onrender.com/ping` → thấy `pong` ✓
-- `https://adox.onrender.com/admin` → thấy trang login ✓
+- `https://<YOUR-DOMAIN>.up.railway.app/` → thấy `{"status":"ok"}` ✓
+- `https://<YOUR-DOMAIN>.up.railway.app/ping` → thấy `pong` ✓
+- `https://<YOUR-DOMAIN>.up.railway.app/admin` → thấy trang login ✓
 
 ---
 
-## Bước 3: Setup UptimeRobot (giữ server chạy 24/7)
+## Bước 3: Thêm Volume (giữ DB không mất)
 
-Render free tự tắt server sau 15 phút không có request.
-UptimeRobot ping mỗi 5 phút → server không bao giờ ngủ.
+Railway hỗ trợ Volume — gắn ổ đĩa bền vững, DB không bị xóa khi redeploy.
 
-1. Vào https://uptimerobot.com → **Register for FREE**
-2. Đăng ký xong, vào Dashboard → bấm **+ Add New Monitor**
-3. Điền:
+1. Trong project, bấm **+ New** → **Volume**
+2. Điền:
+   - **Name:** `data`
+   - **Mount Path:** `/app/data`
+3. Bấm **Add**
+4. Vào tab **Variables**, thêm:
 
-| Mục | Giá trị |
-|-----|---------|
-| **Monitor Type** | `HTTP(s)` |
-| **Friendly Name** | `AdoExport License` |
-| **URL (or IP)** | `https://adox.onrender.com/ping` |
-| **Monitoring Interval** | `5 minutes` |
+| Key | Value |
+|-----|-------|
+| `DB_PATH` | `/app/data/license.db` |
 
-4. Bấm **Create Monitor**
-
-Xong. Server chạy liên tục, UptimeRobot tự ping mỗi 5 phút.
+> Service tự redeploy. Từ giờ `license.db` nằm trong volume, **không mất** khi redeploy.
 
 ---
 
 ## Bước 4: Patch exe
 
-URL `https://adox.onrender.com` = 25 chars ≤ 32 ✓
+Lấy URL Railway của bạn (vd: `https://adox.up.railway.app`).
+
+> URL phải ≤ 32 ký tự. Nếu dài quá → dùng custom domain ngắn.
 
 Mở terminal tại thư mục Adoexport:
 ```bash
 cd "c:\Users\phatt\Downloads\Adoexport"
-python patch_exe2.py https://adox.onrender.com
+python patch_exe2.py https://adox.up.railway.app
 ```
 
 Output:
 ```
-New URL: https://adox.onrender.com/aaaaaa/ (32 bytes)
+New URL: https://adox.up.railway.app/aa/ (32 bytes)
 Found at offset 0x0347CFEC
 Patched: ...adoexport.exe
 ```
 
 File `adoexport.exe` đã được patch, sẵn sàng dùng.
 
-> **Nếu tên service khác `adox`:** thay URL tương ứng, miễn ≤ 32 chars.
+> **Thay URL đúng với domain Railway của bạn.**
 
 ---
 
 ## Bước 5: Sử dụng
 
-1. Mở `https://adox.onrender.com/admin` → đăng nhập `bjo0vj` / `Phat@0833`
+1. Mở `https://<YOUR-DOMAIN>.up.railway.app/admin` → đăng nhập `bjo0vj` / `Phat@0833`
 2. Tạo key: chọn số lượng, thời hạn (days/months/years/lifetime), bấm **Generate**
 3. Copy key (dạng `ADOX-XXXX-XXXX-XXXX`)
 4. Gửi key cho user
@@ -132,19 +129,20 @@ File `adoexport.exe` đã được patch, sẵn sàng dùng.
 
 ## Lưu ý
 
-### ⚠️ SQLite trên Render Free — DB sẽ reset khi redeploy
-- Mỗi lần push code mới hoặc Render tự restart → `license.db` bị xóa
-- Key đã tạo sẽ **mất hết**
-- Fix: đừng push code liên tục, chỉ push khi thật sự cần update
-- Nếu cần DB bền vững:
-  - Render Starter ($7/tháng) có persistent disk
-  - Hoặc đổi sang dùng PostgreSQL free của Render (cần sửa code)
+### ✅ Railway có Volume — DB bền vững
+- Đã setup Volume ở Bước 3 → `license.db` **không mất** khi redeploy
+- Nếu chưa gắn Volume → DB nằm trên ephemeral disk, mất khi redeploy
 
 ### URL phải ≤ 32 ký tự
-- `https://adox.onrender.com` = 25 chars ✓
-- `https://adoexport-license.onrender.com` = 39 chars ✗ (quá dài!)
-- Đặt tên service ngắn: `adox`, `lcs`, `ado`,...
+- `https://adox.up.railway.app` = 28 chars ✓
+- URL mặc định Railway thường dài → cần chỉnh prefix ngắn hoặc dùng custom domain
+- Vào **Settings** → **Networking** → sửa domain prefix cho ngắn
 
 ### Đổi mật khẩu admin
-- Vào Render Dashboard → chọn service → **Environment** → sửa `ADMIN_PASS` → **Save Changes**
-- Service tự restart, password mới có hiệu lực ngay
+- Vào Railway Dashboard → chọn service → **Variables** → sửa `ADMIN_PASS`
+- Service tự redeploy, password mới có hiệu lực ngay
+
+### Railway free tier
+- $5 credit miễn phí mỗi tháng (đủ chạy 24/7 cho app nhẹ)
+- Không cần UptimeRobot — Railway **không tự sleep** như Render
+- Nếu hết credit → service tạm dừng, tháng sau reset
