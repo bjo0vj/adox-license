@@ -8,6 +8,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 DB = os.environ.get("DB_PATH", os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "license.db"))
+os.makedirs(os.path.dirname(DB), exist_ok=True)
 AU = os.environ.get("ADMIN_USER", "bjo0vj")
 AP = os.environ.get("ADMIN_PASS", "Phat@0833")
 
